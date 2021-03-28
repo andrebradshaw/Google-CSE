@@ -74,16 +74,16 @@ async function buildContainer(){
             }
             .mover-left-gradient {
                 background-image: linear-gradient(to bottom right, #ffffff, #ffffff, #f7f9fa);
+                border-bottom-right-radius: 1em;
             }
             .textarea {
                 outline: none;
                 border-radius: 0.4em;
                 border: 0px;
                 background: transparent;
-                box-shadow: rgb(204, 219, 232) 3px 3px 6px 0px inset, rgba(255, 255, 255, 0.5) -3px -3px 6px 1px inset;
+                box-shadow: rgb(204, 219, 232) 2px 2px 4px 1px inset, rgba(255, 255, 255, 0.5) -1px -2px 4px 2px inset;
                 color: #788fa5;
             }
-
             .load_shiner {
                 background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
                 border-radius: 1em;
@@ -137,7 +137,7 @@ async function buildContainer(){
 
     let shadow = 'box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 2px, rgba(0, 0, 0, 0.07) 0px 2px 4px, rgba(0, 0, 0, 0.07) 0px 4px 8px, rgba(0, 0, 0, 0.07) 0px 8px 16px, rgba(0, 0, 0, 0.07) 0px 16px 32px, rgba(0, 0, 0, 0.07) 0px 32px 64px;';
 
-    inlineStyler(cont,`{position: fixed; z-index: ${topZIndexer()}; top: 500px; left: 0px; display: grid; grid-template-columns: 32px ${left_p_h}px; grid-gap: 12px; ${shadow} text-align: left; max-height: ${height}px; max-width: ${width}px; background: #ffffff; color: #374552; border-radius: 1em; padding: 12px; transition: all 111ms;}`);
+    inlineStyler(cont,`{position: fixed; z-index: ${topZIndexer()}; top: 500px; left: 0px; display: grid; grid-template-columns: 32px 1fr; grid-gap: 12px; ${shadow} text-align: left; max-height: ${height}px; max-width: ${width}px; background: #ffffff; color: #374552; border-radius: 1em; padding: 12px; transition: all 111ms;}`);
     document.body.appendChild(cont);
     
     const panel = ele('div');
@@ -157,20 +157,21 @@ async function buildContainer(){
     mover.onmouseover = dragElement;
 
     const left = ele('div');
+    inlineStyler(left,`{padding: 0px;}`);
     cont.appendChild(left);
 
     const textarea = ele('textarea');
     a(textarea,[['class','query_item textarea pad8'],['placeholder','Line Separated Queries']]);
-    inlineStyler(textarea,`{width: ${left_p_h}px; height: 400px;}`);
+    inlineStyler(textarea,`{width: ${left_p_h-16}px; height: 400px;}`);
     left.appendChild(textarea);
 
     const textarea2 = ele('textarea');
     a(textarea2,[['class','fetch_item textarea pad8'],['placeholder','Paste Fetch From Network Here']]);
-    inlineStyler(textarea2,`{width: ${left_p_h}px; height: 100px;}`);
+    inlineStyler(textarea2,`{width: ${left_p_h-16}px; height: 100px;}`);
     left.appendChild(textarea2);
 
     const btn = ele('div');
-    a(btn,[['class','quickli_job_btn centertext pad4']]);
+    a(btn,[['class','quickli_job_btn centertext pad8']]);
     left.appendChild(btn);
     btn.innerText = 'Run Queries';
     btn.onclick = initCSEclientMiner;
@@ -178,6 +179,9 @@ async function buildContainer(){
     keepElmInBoundary(cont);
     inlineStyler(cont,`{left: ${((window.innerWidth - cont.getBoundingClientRect().width) * 0.5)}px;}`);
     keepElmInBoundary(cont);
+    [textarea2,textarea,btn].forEach(b=> inlineStyler(b,`{width: ${(left.getBoundingClientRect().width - (28))}px;}`))
+    
+    // inlineStyler(textarea2,`{width: ${(left.getBoundingClientRect().width - (32))}px;}`);
 }
 
 
