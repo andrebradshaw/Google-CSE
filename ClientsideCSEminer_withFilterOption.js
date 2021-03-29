@@ -84,19 +84,65 @@ async function buildContainer(){
                 box-shadow: rgb(204, 219, 232) 2px 2px 4px 1px inset, rgba(255, 255, 255, 0.5) -1px -2px 4px 2px inset;
                 color: #788fa5;
             }
-
             .load_shiner {
                 background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
                 border-radius: 1em;
                 background-size: 200% 100%;
                 animation: 1.5s shine linear infinite;
             }
+            
             @keyframes shine {
                 to {
                   background-position-x: -200%;
                 }
             }
-              
+   
+            .label {
+                display: inline-flex;
+                align-items: center;
+                cursor: pointer;
+                color: #394a56;
+            }
+            
+            .label-text {
+                margin-left: 16px;
+            }
+            
+            .toggle {
+                isolation: isolate;
+                position: relative;
+                height: 30px;
+                width: 60px;
+                border-radius: 2em;
+                overflow: hidden;
+                box-shadow:
+                -8px -4px 8px 0px #ffffff,
+                8px 4px 12px 0px #d1d9e6,
+                4px 4px 4px 0px #d1d9e6 inset,
+                -4px -4px 4px 0px #ffffff inset;
+            }
+            
+            .toggle-state {
+                display: none;
+            }
+            
+            .indicator {
+                height: 100%;
+                width: 200%;
+                background: #ecf0f3;
+                border-radius: 2em;
+                
+                transform: translate3d(-75%, 0, 0);
+                transition: transform 0.4s cubic-bezier(0.85, 0.05, 0.18, 1.35);
+                box-shadow:
+                -8px -4px 8px 0px #ffffff,
+                8px 4px 12px 0px #d1d9e6;
+            }
+            
+            .toggle-state:checked ~ .indicator {
+                transform: translate3d(25%, 0, 0);
+                background: #d0f2e5;
+            }
             .${style_id} {
                 box-shadow: rgba(0, 0, 0, 0.1) 0px 1px 2px 0px;
                 font-size: 1.2em;
@@ -138,7 +184,7 @@ async function buildContainer(){
 
     let shadow = 'box-shadow: rgba(0, 0, 0, 0.07) 0px 1px 2px, rgba(0, 0, 0, 0.07) 0px 2px 4px, rgba(0, 0, 0, 0.07) 0px 4px 8px, rgba(0, 0, 0, 0.07) 0px 8px 16px, rgba(0, 0, 0, 0.07) 0px 16px 32px, rgba(0, 0, 0, 0.07) 0px 32px 64px;';
 
-    inlineStyler(cont,`{position: fixed; z-index: ${topZIndexer()}; top: 500px; left: 0px; display: grid; grid-template-columns: 32px 1fr; grid-gap: 12px; ${shadow} text-align: left; max-height: ${height}px; max-width: ${width}px; background: #ffffff; color: #374552; border-radius: 1em; padding: 12px; transition: all 111ms;}`);
+    inlineStyler(cont,`{position: fixed; z-index: ${topZIndexer()}; top: 500px; left: 0px; display: grid; grid-template-columns: 32px 1fr 92px; grid-gap: 12px; ${shadow} text-align: left; max-height: ${height}px; max-width: ${width}px; background: #ffffff; color: #374552; border-radius: 1em; padding: 12px; transition: all 111ms;}`);
     document.body.appendChild(cont);
     
     const panel = ele('div');
@@ -176,6 +222,24 @@ async function buildContainer(){
     left.appendChild(btn);
     btn.innerText = 'Run Queries';
     btn.onclick = initCSEclientMiner;
+
+    const right = ele('div');
+    inlineStyler(right,`{display: grid; grid-template-rows: 20px minmax(30px,60px); grid-gap: 8px;}`);
+    cont.appendChild(right);
+    right.innerHTML = `<div title="Select to match the results back to the query. Specifically for LinkedIn, attempts to match name information" style="user-select: none; font-size: 0.9em; text-align: center;">Filter Matches</div>
+    <div>
+        <label title="Select to match the results back to the query. Specifically for LinkedIn, attempts to match name information" class="label">
+            <div class="label-text"></div>
+            <div class="toggle">
+                <input id="remap_query_filter" class="toggle-state" type="checkbox" name="check" value="check" />
+                <div class="indicator"></div>
+            </div>
+        </label>
+    </div>
+  `;
+    // const toggle = ele('input');
+    // a(toggle,[['class','tgl-btn tgl-ios']]);
+    // right.appendChild(toggle);
 
     keepElmInBoundary(cont);
     inlineStyler(cont,`{left: ${((window.innerWidth - cont.getBoundingClientRect().width) * 0.5)}px;}`);
@@ -278,53 +342,85 @@ async function initCSEclientMiner(){
          }
        }, {});
  
-     function parseCSEResponse(d){
-         var tsvReady = (s) => s ? s.replace(/\t|\u0009|&#9;/g, ' ').replace(/[\r\n]+/g, '↵').replace(/\u2029|\u2028|\x85|\x1e|\x1d|\x1c|\x0c|\x0b/g,'↵').replace(/"/g, "'") : s;
+    function parseCSEResponse(d){
+        var tsvReady = (s) => s ? s.replace(/\t|\u0009|&#9;/g, ' ').replace(/[\r\n]+/g, '↵').replace(/\u2029|\u2028|\x85|\x1e|\x1d|\x1c|\x0c|\x0b/g,'↵').replace(/"/g, "'") : s;
+        return d?.results?.map(r=> {
+            let x_title = r?.richSnippet?.metatags?.profileFirstName && r?.richSnippet?.metatags?.profileLastName ? new RegExp('^'+r?.richSnippet?.metatags?.profileFirstName +'\\s+'+r?.richSnippet?.metatags?.profileLastName + '\\s*-\\s*','i') : /^/;
+            return cleanObject({
+                headline: tsvReady(r?.titleNoFormatting?.replace(x_title,'')),
+                content: tsvReady(r?.contentNoFormatting),
+                image_url: tsvReady(r?.richSnippet?.metatags?.ogImage),
+                first_name: tsvReady(r?.richSnippet?.metatags?.profileFirstName),
+                last_name: tsvReady(r?.richSnippet?.metatags?.profileLastName),
+                url: r?.unescapedUrl,
+            });
+        })
+    }
+    function unqKey(array,key){  var q = [];  var map = new Map();  for (const item of array) {    if(!map.has(item[key])){        map.set(item[key], true);        q.push(item);    }  }  return q;}
  
-         return d?.results?.map(r=> {
-             let x_title = r?.richSnippet?.metatags?.profileFirstName && r?.richSnippet?.metatags?.profileLastName ? new RegExp('^'+r?.richSnippet?.metatags?.profileFirstName +'\\s+'+r?.richSnippet?.metatags?.profileLastName + '\\s*-\\s*','i') : /^/;
-             return cleanObject({
-                 headline: tsvReady(r?.titleNoFormatting?.replace(x_title,'')),
-                 content: tsvReady(r?.contentNoFormatting),
-                 image_url: tsvReady(r?.richSnippet?.metatags?.ogImage),
-                 first_name: tsvReady(r?.richSnippet?.metatags?.profileFirstName),
-                 last_name: tsvReady(r?.richSnippet?.metatags?.profileLastName),
-                 url: r?.unescapedUrl,
-             });
-         })
-     }
-     function unqKey(array,key){  var q = [];  var map = new Map();  for (const item of array) {    if(!map.has(item[key])){        map.set(item[key], true);        q.push(item);    }  }  return q;}
- 
-     async function loopThroughCSEsearch(bool_search,api_url){
-         var rando = (n) => Math.round(Math.random() * n);
-         var delay = (ms) => new Promise(res => setTimeout(res, ms));
-         var api_query = buildAPIQuery(bool_search,api_url);
-         var search_res = await getCSERes(api_query);
-         var pages = search_res?.cursor?.pages?.map(i=> i?.start);
-         pages.shift();
-         var contain_arr = [parseCSEResponse(search_res)];
-         for(let i=0; i<pages.length; i++){
-             let uri = /start=/.test(api_query) ? api_query.replace(/start=\d+/, 'start='+pages[i]) : api_query+'&start='+pages[i];
-             let res = await getCSERes(uri);
-             contain_arr.push(parseCSEResponse(res));
-console.log([pages[i],uri]);
-             await delay(rando(3000)+1225);
-         }
-         return unqKey(contain_arr.flat().filter(r=> r),'url');
-     }
-     const reg = (o, n) => o ? o[n] : '';
-     const searches = this.parentElement.getElementsByClassName('query_item')?.[0]?.value?.split(/\n/)?.map(r=> r.trim())?.filter(r=> r);
-     const api_url = reg(/https:\/\/cse.google.com\/.+?(?="|$)/.exec(this.parentElement.getElementsByClassName('fetch_item')?.[0]?.value?.trim()),0)?.replace(/start=\d+/,'start=0');
+
+    function filterResponsesOnQuery(responses, query){
+        const regXready = (str) => str && typeof str == 'string' ? str.replace(/\[/g, '\[').replace(/\]/g, '\]')
+        .replace(/\{/g, '\{').replace(/\}/g, '\}').replace(/\\/g, '\\').replace(/\//g, '\/')
+        .replace(/\?/g, '\?').replace(/\+/g, '\+').replace(/\*/g, '\*').trim() : '^$';
+        var query_arr = query.split(/\s+/);
+        const matches = responses.map(r=> {
+            let target =  r.last_name && r.first_name ? ((r.first_name ? r.first_name : '') + (r.last_name ? ' ' + r.last_name : '')) : r.headline.replace(/\s-\s.+/,'');
+            return query_arr.map(q=> [q.slice(1,(q.length)), q.slice(0,(q.length-1))]).map(q=> new RegExp(q[0].replace(/\W/g,'.{0,1}'),'i').test(target) || new RegExp(q[1].replace(/\W/g,'.{0,1}'),'i').test(target)  ).filter(i=> i)
+        }).map(i=> i.length);
+        let prime = Math.max(...matches);
+        let prime_indexes = matches.map((m,i,r)=> m == prime ? i : -1).filter(i=> i > -1);
+        return prime_indexes.map(p=> responses[p]);
+    }
+
+    async function loopThroughCSEsearch(bool_search,api_url){
+        var rando = (n) => Math.round(Math.random() * n);
+        var delay = (ms) => new Promise(res => setTimeout(res, ms));
+        var api_query = buildAPIQuery(bool_search,api_url);
+        var search_res = await getCSERes(api_query);
+        var pages = search_res?.cursor?.pages?.map(i=> i?.start);
+        const remap_query_filter = document.getElementById('remap_query_filter')?.checked;
+        if(remap_query_filter){
+            let res_arr = parseCSEResponse(search_res);
+            let refiltered = res_arr?.length ? unqKey(filterResponsesOnQuery(res_arr,bool_search),'url') : [{content: 'no matches'}]
+            return refiltered.length > 1 ? [{content: 'no matches'}] : refiltered;
+        }else{
+            if(pages && pages.length){
+                pages.shift();
+                var contain_arr = [parseCSEResponse(search_res)];
+                for(let i=0; i<pages.length; i++){
+                    let uri = /start=/.test(api_query) ? api_query.replace(/start=\d+/, 'start='+pages[i]) : api_query+'&start='+pages[i];
+                    let res = await getCSERes(uri);
+                    contain_arr.push(parseCSEResponse(res));
+        console.log([pages[i],uri]);
+                    await delay(rando(3000)+1225);
+                }
+                return unqKey(contain_arr.flat().filter(r=> r),'url');
+            }else{return [{content: 'no matches'}]}
+        }
+    }
+    const rando = (n) => Math.round(Math.random() * n);
+    const delay = (ms) => new Promise(res => setTimeout(res, ms));
+    const tsvReady = (s) => s ? s.replace(/\t|\u0009|&#9;/g, ' ').replace(/[\r\n]+/g, '↵').replace(/\u2029|\u2028|\x85|\x1e|\x1d|\x1c|\x0c|\x0b/g,'↵').replace(/"/g, "'") : s;
+    const reg = (o, n) => o ? o[n] : '';
+    const searches = this.parentElement.getElementsByClassName('query_item')?.[0]?.value?.split(/\n/)?.map(r=> r.trim())?.filter(r=> r);
+    const api_url = reg(/https:\/\/cse.google.com\/.+?(?="|$)/.exec(this.parentElement.getElementsByClassName('fetch_item')?.[0]?.value?.trim()),0)?.replace(/start=\d+/,'start=0');
 console.log([searches,api_url]);
-     if(api_url && searches?.length){
+    const remap_query_filter = document.getElementById('remap_query_filter')?.checked;
+    if(api_url && searches?.length){
         const res_contain_arr = [];
         for(let i=0; i<searches.length; i++){
             let output_json = await loopThroughCSEsearch(searches[i],api_url);
-console.log(output_json);
-            res_contain_arr.push( output_json.map(j=> {return {...j,...{query: searches[i]}} } ) );
+            console.log(output_json);
+            res_contain_arr.push( output_json.map(j=> {return {...j,...{query: tsvReady(searches[i])}} } ) );
+            await delay(rando(3000)+1225);
         }
-        convert2TsvAndDownload(unqKey(res_contain_arr.flat(),'url'),'cse list.tsv');
-     }
+        if(remap_query_filter){
+            convert2TsvAndDownload(res_contain_arr.flat(),'cse target filtered list.tsv');
+        }else{
+            convert2TsvAndDownload(unqKey(res_contain_arr.flat(),'url'),'cse results list.tsv');
+        }
+    }
 }
  
 buildContainer()
