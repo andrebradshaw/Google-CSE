@@ -300,9 +300,10 @@ async function initCSEclientMiner(){
          var api_query = buildAPIQuery(bool_search,api_url);
          var search_res = await getCSERes(api_query);
          var pages = search_res?.cursor?.pages?.map(i=> i?.start);
-         pages.shift();
+
+         if(pages) pages.shift();
          var contain_arr = [parseCSEResponse(search_res)];
-         for(let i=0; i<pages.length; i++){
+         for(let i=0; i<pages?.length; i++){
              let uri = /start=/.test(api_query) ? api_query.replace(/start=\d+/, 'start='+pages[i]) : api_query+'&start='+pages[i];
              let res = await getCSERes(uri);
              contain_arr.push(parseCSEResponse(res));
