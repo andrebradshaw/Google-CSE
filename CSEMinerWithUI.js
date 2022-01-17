@@ -282,7 +282,7 @@ async function initCSEclientMiner(){
  
          return d?.results?.map(r=> {
              let x_title = r?.richSnippet?.metatags?.profileFirstName && r?.richSnippet?.metatags?.profileLastName ? new RegExp('^'+r?.richSnippet?.metatags?.profileFirstName +'\\s+'+r?.richSnippet?.metatags?.profileLastName + '\\s*-\\s*','i') : /^/;
-             let fullname = richSnippet?.metatags?.ogTitle;
+             let fullname = r?.richSnippet?.metatags?.ogTitle;
              return cleanObject({
                  headline: tsvReady(r?.titleNoFormatting?.replace(x_title,'')),
                  content: tsvReady(r?.contentNoFormatting),
