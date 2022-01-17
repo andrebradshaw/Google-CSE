@@ -282,13 +282,16 @@ async function initCSEclientMiner(){
  
          return d?.results?.map(r=> {
              let x_title = r?.richSnippet?.metatags?.profileFirstName && r?.richSnippet?.metatags?.profileLastName ? new RegExp('^'+r?.richSnippet?.metatags?.profileFirstName +'\\s+'+r?.richSnippet?.metatags?.profileLastName + '\\s*-\\s*','i') : /^/;
+             let fullname = richSnippet?.metatags?.ogTitle;
              return cleanObject({
                  headline: tsvReady(r?.titleNoFormatting?.replace(x_title,'')),
                  content: tsvReady(r?.contentNoFormatting),
                  image_url: tsvReady(r?.richSnippet?.metatags?.ogImage),
+                 full_name: tsvReady(fullname),
                  first_name: tsvReady(r?.richSnippet?.metatags?.profileFirstName),
                  last_name: tsvReady(r?.richSnippet?.metatags?.profileLastName),
                  url: r?.unescapedUrl,
+
              });
          })
      }
